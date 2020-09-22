@@ -3,6 +3,8 @@
  * It represents an instance of the game world, and includes all the game objects.
  * It is the state of the game.
  */
+import { v4 as uuidv4 } from 'uuid';
+
 class GameWorld {
 
     /**
@@ -15,6 +17,7 @@ class GameWorld {
         this.objects = {};
         this.playerCount = 0;
         this.idCount = 0;
+        this.groups = {}
     }
 
     /**
@@ -23,13 +26,7 @@ class GameWorld {
      * @return {Number} the new id
      */
     getNewId() {
-        let possibleId = this.idCount;
-        // find a free id
-        while (possibleId in this.objects)
-            possibleId++;
-
-        this.idCount = possibleId + 1;
-        return possibleId;
+        return uuidv4();
     }
 
     /**
@@ -93,12 +90,26 @@ class GameWorld {
         }));
     }
 
+    getObject(id) {
+        if (typeof id != 'string') {
+            id = id.id
+        }
+        return this.objects[id]
+    }
+
+    getObjectsOfGroup(groupName) {
+        return this.groups[groupName].map(id => this.getObject(id))
+    }
+
     /**
      * Add an object to the game world
      * @private
      * @param {Object} object object to add
      */
-    addObject(object) {
+    addObject(object, groupName) {
+        if (groupName) {
+            this.groups[groupName].push(object.id)
+        }
         this.objects[object.id] = object;
     }
 
@@ -108,6 +119,9 @@ class GameWorld {
      * @param {number} id id of the object to remove
      */
     removeObject(id) {
+        for (let groupName in this.groups) {
+            this.removeObjectOfGroup(groupName, id)
+        }
         delete this.objects[id];
     }
 
@@ -122,6 +136,20 @@ class GameWorld {
             let returnValue = callback(id, this.objects[id]);  // TODO: the key should be Number(id)
             if (returnValue === false) break;
         }
+    }
+
+    addGroup(name) {
+        this.groups[name] = []
+    }
+
+    removeGroup(name) {
+        delete this.groups[name]
+    }
+
+    removeObjectOfGroup(name, id) {
+        const index = this.groups[name].findIndex(object => object.id == id)
+        if (index == -1) return
+        this.groups[name].splice(index, 1)
     }
 
 }

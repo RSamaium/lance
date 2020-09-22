@@ -5,6 +5,7 @@ import Scheduler from './lib/Scheduler';
 import Serializer from './serialize/Serializer';
 import NetworkTransmitter from './network/NetworkTransmitter';
 import NetworkMonitor from './network/NetworkMonitor';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * ServerEngine is the main server-side singleton code.
@@ -111,8 +112,7 @@ class ServerEngine {
         this.serverTime = (new Date().getTime());
 
         // for each player, replay all the inputs in the oldest step
-        for (let playerIdStr of Object.keys(this.playerInputQueues)) {
-            let playerId = Number(playerIdStr);
+        for (let playerId of Object.keys(this.playerInputQueues)) {
             let inputQueue = this.playerInputQueues[playerId];
             let queueSteps = Object.keys(inputQueue);
             let minStep = Math.min.apply(null, queueSteps);
@@ -163,7 +163,6 @@ class ServerEngine {
 
             const roomPlayers = Object.keys(this.connectedPlayers)
                 .filter(p => this.connectedPlayers[p].roomName === roomName);
-
             // if at least one player is new, we should send a full payload
             let diffUpdate = true;
             for (const socketId of roomPlayers) {
@@ -182,7 +181,7 @@ class ServerEngine {
             this.gameEngine.trace.info(() => `========== sending world update ${this.gameEngine.world.stepCount} to room ${roomName} is delta update: ${diffUpdate} ==========`);
             for (const socketId of roomPlayers)
                 this.connectedPlayers[socketId].socket.emit('worldUpdate', payload);
-            this.networkTransmitter.clearPayload();
+            this.networkTransmitter.clearPayload(roomName);
             room.requestImmediateSync = false;
             room.requestFullSync = false;
         }
@@ -225,7 +224,6 @@ class ServerEngine {
                 objectInstance: obj
             });
         }
-
         return this.networkTransmitter.serializePayload();
     }
 
@@ -311,8 +309,6 @@ class ServerEngine {
     onPlayerConnected(socket) {
         let that = this;
 
-        console.log('Client connected');
-
         // save player
         this.connectedPlayers[socket.id] = {
             socket: socket,
@@ -322,16 +318,14 @@ class ServerEngine {
 
         let playerId = this.getPlayerId(socket);
         if (!playerId) {
-            playerId = ++this.gameEngine.world.playerCount;
+            playerId = uuidv4();
         }
         socket.playerId = playerId;
 
         socket.lastHandledInput = null;
         socket.joinTime = (new Date()).getTime();
         this.resetIdleTimeout(socket);
-
-        console.log('Client Connected', socket.id);
-
+        
         let playerEvent = { id: socket.id, playerId, joinTime: socket.joinTime, disconnectTime: 0 };
         this.gameEngine.emit('server__playerJoined', playerEvent);
         this.gameEngine.emit('playerJoined', playerEvent);

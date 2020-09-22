@@ -22,6 +22,7 @@ export default class NetworkedEventFactory {
     create(payload) {
         let networkedEvent = new Serializable();
         networkedEvent.classId = Utils.hashStr(this.eventName);
+        networkedEvent.eventName = this.eventName
 
         if (this.netScheme) {
             networkedEvent.netScheme = Object.assign({}, this.netScheme);

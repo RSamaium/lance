@@ -15,6 +15,7 @@ let dx = new TwoVector();
  * with only one foot on the platform, it won't fall over. This is a desired
  * game behaviour in platformer games.
  */
+
 class SimplePhysicsEngine extends PhysicsEngine {
 
     /**

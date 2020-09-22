@@ -67,7 +67,6 @@ export default class NetworkTransmitter {
 
         let stagedNetworkedEvent = this.registeredEvents[eventName].create(payload);
         this.networkedEventCollection.events.push(stagedNetworkedEvent);
-
         return stagedNetworkedEvent;
     }
 
@@ -84,8 +83,14 @@ export default class NetworkTransmitter {
         return this.serializer.deserialize(payload.dataBuffer).obj;
     }
 
-    clearPayload() {
-        this.networkedEventCollection.events = [];
+    clearPayload(roomName) {
+        const { events } = this.networkedEventCollection
+        this.networkedEventCollection.events = events.filter(ev => {
+            if (ev.objectInstance) { 
+                 return ev.objectInstance._roomName != roomName
+            }
+            return false
+        })
     }
 
 }

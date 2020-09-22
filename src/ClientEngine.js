@@ -141,7 +141,7 @@ class ClientEngine {
 
                 this.socket.on('playerJoined', (playerData) => {
                     this.gameEngine.playerId = playerData.playerId;
-                    this.messageIndex = Number(this.gameEngine.playerId) * 10000;
+                    this.messageIndex = this.gameEngine.playerId;
                 });
 
                 this.socket.on('worldUpdate', (worldData) => {

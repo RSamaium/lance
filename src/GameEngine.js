@@ -97,7 +97,7 @@ class GameEngine {
     findLocalShadow(serverObj) {
 
         for (let localId of Object.keys(this.world.objects)) {
-            if (Number(localId) < this.options.clientIDSpace) continue;
+            if (localId < this.options.clientIDSpace) continue;
             let localObj = this.world.objects[localId];
             if (localObj.hasOwnProperty('inputId') && localObj.inputId === serverObj.inputId)
                 return localObj;
@@ -203,11 +203,11 @@ class GameEngine {
      * @param {Object} object - the object.
      * @return {Object} the final object.
      */
-    addObjectToWorld(object) {
+    addObjectToWorld(object, groupName) {
 
         // if we are asked to create a local shadow object
         // the server copy may already have arrived.
-        if (Number(object.id) >= this.options.clientIDSpace) {
+        if (object.id >= this.options.clientIDSpace) {
             let serverCopyArrived = false;
             this.world.forEachObject((id, o) => {
                 if (o.hasOwnProperty('inputId') && o.inputId === object.inputId) {
@@ -221,7 +221,7 @@ class GameEngine {
             }
         }
 
-        this.world.addObject(object);
+        this.world.addObject(object, groupName);
 
         // tell the object to join the game, by creating
         // its corresponding physical entities and renderer entities.

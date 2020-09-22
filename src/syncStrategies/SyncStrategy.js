@@ -56,7 +56,6 @@ export default class SyncStrategy {
         };
 
         e.syncEvents.forEach(sEvent => {
-
             // keep a reference of events by object id
             if (sEvent.objectInstance) {
                 let objectId = sEvent.objectInstance.id;
@@ -67,9 +66,9 @@ export default class SyncStrategy {
             // keep a reference of events by step
             let stepCount = sEvent.stepCount;
             let eventName = sEvent.eventName;
-            if (eventName === 'objectDestroy' || eventName === 'objectCreate')
-                lastSync.required = true;
-
+            if (eventName === 'objectDestroy' || eventName === 'objectCreate') {
+                lastSync.required = true
+            }
             if (!lastSync.syncSteps[stepCount]) lastSync.syncSteps[stepCount] = {};
             if (!lastSync.syncSteps[stepCount][eventName]) lastSync.syncSteps[stepCount][eventName] = [];
             lastSync.syncSteps[stepCount][eventName].push(sEvent);

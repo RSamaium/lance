@@ -12,8 +12,8 @@ class GameObject extends Serializable {
 
     static get netScheme() {
         return {
-            id: { type: BaseTypes.TYPES.INT32 },
-            playerId: { type: BaseTypes.TYPES.INT16 }
+            id: { type: BaseTypes.TYPES.STRING },
+            playerId: { type: BaseTypes.TYPES.STRING }
         };
     }
 
@@ -47,16 +47,18 @@ class GameObject extends Serializable {
         * @member {Number}
         */
         this.id = null;
+        this.playerId = (props && props.playerId) ? props.playerId : 0;
+        
         if (options && 'id' in options)
             this.id = options.id;
         else if (this.gameEngine)
-            this.id = this.gameEngine.world.getNewId();
+            this.id = this.playerId || this.gameEngine.world.getNewId();
 
         /**
         * playerId of player who created this object
         * @member {Number}
         */
-        this.playerId = (props && props.playerId) ? props.playerId : 0;
+       
 
         this.components = {};
     }
