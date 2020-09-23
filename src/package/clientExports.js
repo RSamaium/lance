@@ -14,6 +14,7 @@ import ClientEngine from '../ClientEngine.js';
 import KeyboardControls from '../controls/KeyboardControls.js';
 import Renderer from '../render/Renderer.js';
 import AFrameRenderer from '../render/AFrameRenderer.js';
+import ServerEngine from '../ServerEngine.js';
 
 export {
   GameEngine,
@@ -32,4 +33,5 @@ export {
   KeyboardControls,
   Renderer,
   AFrameRenderer,
+  ServerEngine
 };

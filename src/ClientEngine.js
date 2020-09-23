@@ -1,4 +1,4 @@
-import io from 'socket.io-client';
+import ioClient from 'socket.io-client';
 import Utils from './lib/Utils';
 import Scheduler from './lib/Scheduler';
 import Synchronizer from './Synchronizer';
@@ -42,7 +42,7 @@ class ClientEngine {
       * @param {String} inputOptions.serverURL - Socket server url
       * @param {Renderer} Renderer - the Renderer class constructor
       */
-    constructor(gameEngine, inputOptions, Renderer) {
+    constructor(gameEngine, io, inputOptions, Renderer) {
 
         this.options = Object.assign({
             autoConnect: true,
@@ -52,6 +52,8 @@ class ClientEngine {
             scheduler: 'render-schedule',
             serverURL: null,
         }, inputOptions);
+
+        this.io = io || ioClient
 
         /**
          * reference to serializer
@@ -120,13 +122,21 @@ class ClientEngine {
         let connectSocket = matchMakerAnswer => {
             return new Promise((resolve, reject) => {
 
+                const standaloneMode = typeof this.io != 'function'
+
                 if (matchMakerAnswer.status !== 'ok')
                     reject('matchMaker failed status: ' + matchMakerAnswer.status);
 
                 if (this.options.verbose)
                     console.log(`connecting to game server ${matchMakerAnswer.serverURL}`);
-                this.socket = io(matchMakerAnswer.serverURL, options);
 
+                if (!standaloneMode) {
+                    this.socket = this.io(matchMakerAnswer.serverURL, options);
+                }
+                else {
+                    this.socket = this.io.connection()
+                }
+ 
                 this.networkMonitor.registerClient(this);
 
                 this.socket.once('connect', () => {
@@ -151,6 +161,10 @@ class ClientEngine {
                 this.socket.on('roomUpdate', (roomData) => {
                     this.gameEngine.emit('client__roomUpdate', roomData);
                 });
+
+                if (standaloneMode) {
+                    resolve()
+                }
             });
         };
 

@@ -53,7 +53,7 @@ declare type ClientEngineInputOptions = {
 }
 
 export class ClientEngine<GE extends GameEngine<PhysicsEngine>> {
-    constructor(gameEngine: GE, inputOptions: ClientEngineInputOptions, rendererClass: { new(...args: any[]): Renderer<GE, ClientEngine<GE>>; });
+    constructor(gameEngine: GE, io: any, inputOptions: ClientEngineInputOptions, rendererClass: { new(...args: any[]): Renderer<GE, ClientEngine<GE>>; });
 
     applyDelayedInputs(): void;
 
