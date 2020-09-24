@@ -11,6 +11,7 @@ import PhysicalObject2D from '../serialize/PhysicalObject2D.js';
 import PhysicalObject3D from '../serialize/PhysicalObject3D.js';
 import ServerEngine from '../ServerEngine.js';
 import Lib from '../lib/lib.js';
+import Utils from '../lib/Utils.js';
 
 export {
   GameEngine,
@@ -26,4 +27,5 @@ export {
   PhysicalObject3D,
   ServerEngine,
   Lib,
+  Utils
 };

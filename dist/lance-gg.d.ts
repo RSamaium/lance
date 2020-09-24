@@ -379,6 +379,8 @@ export class GameWorld {
 
     addObject(object: any): void;
 
+    getObject(id: any): any
+
     forEachObject(callback: any): void;
 
     getNewId(): any;
@@ -402,7 +404,7 @@ declare type InputData = {
 }
 
 export class KeyboardControls {
-    constructor(clientEngine: any);
+    constructor(clientEngine: any, eventEmitter?: any);
 
     bindKey(keys: string, actionName: string, options?: object): void;
 
@@ -822,7 +824,7 @@ declare type SimplePhysicsEngineOptions = PhysicsEngineOptions & {
         collisionDistance?: number;
         autoResolve?: boolean;
     },
-    gravity: TwoVector;
+    gravity?: TwoVector;
 }
 
 export class SimplePhysicsEngine extends PhysicsEngine {
@@ -938,4 +940,9 @@ export namespace Lib {
 
         static TRACE_WARN: number;
     }
+
+}
+
+export class Utils {
+    static hashStr(s: string)
 }

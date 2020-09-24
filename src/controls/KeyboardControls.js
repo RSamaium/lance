@@ -180,7 +180,7 @@ const keyCodeTable = {
  */
 class KeyboardControls {
 
-    constructor(clientEngine) {
+    constructor(clientEngine, eventEmitter) {
 
         this.clientEngine = clientEngine;
         this.gameEngine = clientEngine.gameEngine;
@@ -192,6 +192,9 @@ class KeyboardControls {
 
         // a list of bound keys and their corresponding actions
         this.boundKeys = {};
+
+        this.stop = false
+        this.eventEmitter = eventEmitter
 
         this.gameEngine.on('client__preStep', () => {
             for (let keyName of Object.keys(this.boundKeys)) {
@@ -257,6 +260,13 @@ class KeyboardControls {
         e = e || window.event;
 
         let keyName = keyCodeTable[e.keyCode];
+
+        if (this.eventEmitter) {
+            this.eventEmitter.emit('keypress', keyName)
+        }
+
+        if (this.stop) return
+        
         if (keyName && this.boundKeys[keyName]) {
             if (this.keyState[keyName] == null) {
                 this.keyState[keyName] = {

@@ -10,6 +10,7 @@ import DynamicObject from '../serialize/DynamicObject.js';
 import PhysicalObject2D from '../serialize/PhysicalObject2D.js';
 import PhysicalObject3D from '../serialize/PhysicalObject3D.js';
 import Lib from '../lib/lib.js';
+import Utils from '../lib/Utils.js';
 import ClientEngine from '../ClientEngine.js';
 import KeyboardControls from '../controls/KeyboardControls.js';
 import Renderer from '../render/Renderer.js';
@@ -29,6 +30,7 @@ export {
   PhysicalObject2D,
   PhysicalObject3D,
   Lib,
+  Utils,
   ClientEngine,
   KeyboardControls,
   Renderer,
