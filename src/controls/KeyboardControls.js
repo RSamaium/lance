@@ -260,9 +260,14 @@ class KeyboardControls {
         e = e || window.event;
 
         let keyName = keyCodeTable[e.keyCode];
+        let ret = []
 
-        if (this.eventEmitter) {
-            this.eventEmitter.emit('keypress', keyName)
+        if (this.eventEmitter && isDown) {
+            ret = this.eventEmitter.emit('keypress', keyName)
+        }
+        
+        if (ret.includes(false)) {
+            return
         }
 
         if (this.stop) return
