@@ -44,7 +44,7 @@ export default class SyncStrategy {
         // before we overwrite the last sync, check if it was a required sync
         // syncs that create or delete objects are saved because they must be applied.
         if (this.lastSync && this.lastSync.required) {
-            this.requiredSyncs.push(this.lastSync);
+            this.requiredSyncs.push(this.lastSync)
         }
 
         // build new sync object
@@ -114,7 +114,7 @@ export default class SyncStrategy {
         // apply all pending required syncs
         while (this.requiredSyncs.length) {
 
-            let requiredStep = this.requiredSyncs[0].stepCount;
+            let requiredStep = this.requiredSyncs[0].stepCount; 
 
             // if we haven't reached the corresponding step, it's too soon to apply syncs
             if (requiredStep > this.gameEngine.world.stepCount)

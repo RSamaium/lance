@@ -83,11 +83,11 @@ export default class NetworkTransmitter {
         return this.serializer.deserialize(payload.dataBuffer).obj;
     }
 
-    clearPayload(roomName) {
+    clearPayload(roomName, listObjects) {
         const { events } = this.networkedEventCollection
         this.networkedEventCollection.events = events.filter(ev => {
             if (ev.objectInstance) { 
-                 return ev.objectInstance._roomName != roomName
+                 return listObjects.includes(ev.objectInstance.id)
             }
             return false
         })

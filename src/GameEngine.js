@@ -203,7 +203,7 @@ class GameEngine {
      * @param {Object} object - the object.
      * @return {Object} the final object.
      */
-    addObjectToWorld(object, groupName) {
+    addObjectToWorld(object) {
 
         // if we are asked to create a local shadow object
         // the server copy may already have arrived.
@@ -221,7 +221,7 @@ class GameEngine {
             }
         }
 
-        this.world.addObject(object, groupName);
+        this.world.addObject(object)
 
         // tell the object to join the game, by creating
         // its corresponding physical entities and renderer entities.

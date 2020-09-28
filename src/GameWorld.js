@@ -17,7 +17,7 @@ class GameWorld {
         this.objects = {};
         this.playerCount = 0;
         this.idCount = 0;
-        this.groups = {}
+        this.groups = new Map()
     }
 
     /**
@@ -98,7 +98,7 @@ class GameWorld {
     }
 
     getObjectsOfGroup(groupName) {
-        return this.groups[groupName].map(id => this.getObject(id))
+        return this.groups.get(groupName).collections.map(id => this.getObject(id))
     }
 
     /**
@@ -106,11 +106,15 @@ class GameWorld {
      * @private
      * @param {Object} object object to add
      */
-    addObject(object, groupName) {
-        if (groupName) {
-            this.groups[groupName].push(object.id)
-        }
+    addObject(object) {
         this.objects[object.id] = object;
+    }
+
+    addObjectInGroup(object, groupName) {
+        if (!this.groups.has(groupName)) {
+            this.addGroup(groupName)
+        }
+        this.groups.get(groupName).collections.push(object.id)
     }
 
     /**
@@ -119,9 +123,9 @@ class GameWorld {
      * @param {number} id id of the object to remove
      */
     removeObject(id) {
-        for (let groupName in this.groups) {
-            this.removeObjectOfGroup(groupName, id)
-        }
+        this.groups.forEach((group) => {
+            this.removeObjectOfGroup(group.groupName, id)
+        })
         delete this.objects[id];
     }
 
@@ -138,18 +142,32 @@ class GameWorld {
         }
     }
 
-    addGroup(name) {
-        this.groups[name] = []
+    addGroup(groupName) {
+        this.groups.set(groupName, {
+            collections: [],
+            requestImmediateSync: false,
+            requestFullSync: false,
+            syncCounter: 0,
+            groupName
+        })
     }
 
-    removeGroup(name) {
-        delete this.groups[name]
+    removeGroup(groupName) {
+        this.groups.delete(groupName)
     }
 
-    removeObjectOfGroup(name, id) {
-        const index = this.groups[name].findIndex(object => object.id == id)
-        if (index == -1) return
-        this.groups[name].splice(index, 1)
+    removeObjectOfGroup(groupName, id) {
+        const group = this.groups.get(groupName)
+        const collections = group.collections.filter(objId => objId != id)
+        if (collections.length == 0) {
+            this.removeGroup(groupName)
+        }
+        else {
+            this.groups.set(groupName, {
+                ...group,
+                collections
+            }) 
+        } 
     }
 
 }
