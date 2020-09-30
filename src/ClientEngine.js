@@ -67,7 +67,6 @@ class ClientEngine {
          */
         this.gameEngine = gameEngine;
         this.gameEngine.registerClasses(this.serializer);
-        this.networkTransmitter = new NetworkTransmitter(this.serializer);
         this.networkMonitor = new NetworkMonitor();
 
         this.inboundMessages = [];
@@ -200,7 +199,7 @@ class ClientEngine {
 
         return this.renderer.init().then(() => {
             this.gameEngine.start();
-
+            this.networkTransmitter = new NetworkTransmitter(this.serializer, this.gameEngine.world);
             if (this.options.scheduler === 'fixed') {
                 // schedule and start the game loop
                 this.scheduler = new Scheduler({

@@ -6,10 +6,12 @@ import Utils from './../lib/Utils';
 
 export default class NetworkTransmitter {
 
-    constructor(serializer) {
+    constructor(serializer, world) {
         this.serializer = serializer;
+        this.world = world
 
         this.registeredEvents = [];
+        this.networkedEventCollection = {}
 
         this.serializer.registerClass(NetworkedEventCollection);
 
@@ -41,7 +43,13 @@ export default class NetworkTransmitter {
             }
         });
 
-        this.networkedEventCollection = new NetworkedEventCollection();
+        world.onAddGroup = (name) => {
+            this.networkedEventCollection[name] = new NetworkedEventCollection()
+        }
+
+        world.onRemoveGroup = (name) => {
+            delete this.networkedEventCollection[name]
+        }
     }
 
     registerNetworkedEventFactory(eventName, options) {
@@ -59,22 +67,28 @@ export default class NetworkTransmitter {
         this.registeredEvents[eventName] = new NetworkedEventFactory(this.serializer, eventName, options);
     }
 
-    addNetworkedEvent(eventName, payload) {
+    addNetworkedEvent(roomName, eventName, payload) {
         if (!this.registeredEvents[eventName]) {
             console.error(`NetworkTransmitter: no such event ${eventName}`);
             return null;
         }
+        if (!this.networkedEventCollection[roomName]) {
+            return null
+        }
 
         let stagedNetworkedEvent = this.registeredEvents[eventName].create(payload);
-        this.networkedEventCollection.events.push(stagedNetworkedEvent);
+        this.networkedEventCollection[roomName].events.push(stagedNetworkedEvent);
         return stagedNetworkedEvent;
     }
 
-    serializePayload() {
-        if (this.networkedEventCollection.events.length === 0)
+    serializePayload(roomName) {
+        if (!this.networkedEventCollection[roomName]) {
+            return null
+        }
+        if (this.networkedEventCollection[roomName].events.length === 0)
             return null;
 
-        let dataBuffer = this.networkedEventCollection.serialize(this.serializer);
+        let dataBuffer = this.networkedEventCollection[roomName].serialize(this.serializer);
 
         return dataBuffer;
     }
@@ -83,14 +97,8 @@ export default class NetworkTransmitter {
         return this.serializer.deserialize(payload.dataBuffer).obj;
     }
 
-    clearPayload(roomName, listObjects) {
-        const { events } = this.networkedEventCollection
-        this.networkedEventCollection.events = events.filter(ev => {
-            if (ev.objectInstance) { 
-                 return listObjects.includes(ev.objectInstance.id)
-            }
-            return false
-        })
+    clearPayload(roomName) {
+        this.networkedEventCollection[roomName].events = []
     }
 
 }

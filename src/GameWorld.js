@@ -20,6 +20,10 @@ class GameWorld {
         this.groups = new Map()
     }
 
+    get size() {
+        return Object.keys(this.objects).length
+    }
+
     /**
      * Gets a new, fresh and unused id that can be used for a new object
      * @private
@@ -90,6 +94,10 @@ class GameWorld {
         }));
     }
 
+    has(id) {
+        return !!this.objects[id]
+    }
+
     getObject(id) {
         if (typeof id != 'string') {
             id = id.id
@@ -123,10 +131,13 @@ class GameWorld {
      * @param {number} id id of the object to remove
      */
     removeObject(id) {
+        const groupsDeleted = []
         this.groups.forEach((group) => {
-            this.removeObjectOfGroup(group.groupName, id)
+            const isDeleted = this.removeObjectOfGroup(group.groupName, id)
+            if (isDeleted) groupsDeleted.push(group.groupName)
         })
         delete this.objects[id];
+        return groupsDeleted
     }
 
     /**
@@ -142,6 +153,12 @@ class GameWorld {
         }
     }
 
+    forEach(callback) {
+        for (let id in this.objects) {
+            callback(this.objects[id], id)
+        }
+    }
+
     addGroup(groupName) {
         this.groups.set(groupName, {
             collections: [],
@@ -150,15 +167,26 @@ class GameWorld {
             syncCounter: 0,
             groupName
         })
+        if (this.onAddGroup) this.onAddGroup(groupName)
     }
 
     removeGroup(groupName) {
         this.groups.delete(groupName)
+        if (this.onRemoveGroup) this.onRemoveGroup(groupName)
     }
 
     removeObjectOfGroup(groupName, id) {
         const group = this.groups.get(groupName)
-        const collections = group.collections.filter(objId => objId != id)
+        let isDeleted = false
+        const collections = group.collections.filter(objId => {
+            if (objId != id) {
+                return true
+            }
+            else {
+                isDeleted = true
+                return false
+            }
+        })
         if (collections.length == 0) {
             this.removeGroup(groupName)
         }
@@ -167,7 +195,8 @@ class GameWorld {
                 ...group,
                 collections
             }) 
-        } 
+        }
+        return isDeleted
     }
 
 }

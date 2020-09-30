@@ -68,7 +68,6 @@ class ServerEngine {
         this.serializer = new Serializer();
         this.gameEngine = gameEngine;
         this.gameEngine.registerClasses(this.serializer);
-        this.networkTransmitter = new NetworkTransmitter(this.serializer);
         this.networkMonitor = new NetworkMonitor(this);
 
         /**
@@ -92,6 +91,7 @@ class ServerEngine {
     // start the ServerEngine
     start() {
         this.gameEngine.start();
+        this.networkTransmitter = new NetworkTransmitter(this.serializer, this.gameEngine.world);
         this.gameEngine.emit('server__init');
 
         let schedulerConfig = {
@@ -185,24 +185,23 @@ class ServerEngine {
             if ((room.syncCounter++ % this.options.fullSyncRate === 0) || room.requestFullSync)
                 diffUpdate = false;
 
-            this.networkTransmitter.addNetworkedEvent('syncHeader', {
+            this.networkTransmitter.addNetworkedEvent(roomName, 'syncHeader', {
                 stepCount: world.stepCount,
                 fullUpdate: Number(!diffUpdate)
             })
-
+            
             for (const player of roomPlayers) {
-                this.serializeUpdate(player, { diffUpdate });
+                this.serializeUpdate(roomName, player, { diffUpdate });
             }
 
-            const payload = this.networkTransmitter.serializePayload();
+            const payload = this.networkTransmitter.serializePayload(roomName);
 
-            for (const player of roomPlayers) {
-                if (player.socket) player.socket.emit('worldUpdate', payload);
+            if (payload) {
+                for (const player of roomPlayers) { 
+                    if (player.socket) player.socket.emit('worldUpdate', payload); 
+                }
             }
-
-            const listObjectId = world.groups.get(roomName).collections
-
-            this.networkTransmitter.clearPayload(roomName, listObjectId);
+            this.networkTransmitter.clearPayload(roomName); 
             room.requestImmediateSync = false;
             room.requestFullSync = false;
         }
@@ -211,7 +210,7 @@ class ServerEngine {
     // create a serialized package of the game world
     // TODO: this process could be made much much faster if the buffer creation and
     //       size calculation are done in a single phase, along with string pruning.
-    serializeUpdate(object, options) {
+    serializeUpdate(roomName, object, options) {
         let world = this.gameEngine.world;
         let diffUpdate = Boolean(options && options.diffUpdate);
         let objId = object.id
@@ -230,7 +229,7 @@ class ServerEngine {
             obj = obj.prunedStringsClone(this.serializer, prevObject);
         }
 
-        this.networkTransmitter.addNetworkedEvent('objectUpdate', {
+        this.networkTransmitter.addNetworkedEvent(roomName, 'objectUpdate', {
             stepCount: world.stepCount,
             objectInstance: obj
         });
@@ -296,10 +295,10 @@ class ServerEngine {
     // handle the object creation
     onObjectAdded(obj) {
        // obj._roomName = obj._roomName || this.DEFAULT_ROOM_NAME;
-        this.networkTransmitter.addNetworkedEvent('objectCreate', {
+       /* this.networkTransmitter.addNetworkedEvent('objectCreate', {
             stepCount: this.gameEngine.world.stepCount,
             objectInstance: obj
-        });
+        });*/
 
         if (this.options.updateOnObjectCreation) {
            // this.rooms[obj._roomName].requestImmediateSync = true;
@@ -307,11 +306,13 @@ class ServerEngine {
     }
 
     // handle the object creation
-    onObjectDestroyed(obj) {
-        this.networkTransmitter.addNetworkedEvent('objectDestroy', {
-            stepCount: this.gameEngine.world.stepCount,
-            objectInstance: obj
-        });
+    onObjectDestroyed({ object, groups }) {
+        for (let room of groups) {
+            this.networkTransmitter.addNetworkedEvent(room, 'objectDestroy', {
+                stepCount: this.gameEngine.world.stepCount,
+                objectInstance: object
+            });
+        }
     }
 
     getPlayerId(socket) {

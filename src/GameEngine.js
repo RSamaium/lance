@@ -277,8 +277,9 @@ class GameEngine {
         if (typeof object.onRemoveFromWorld === 'function')
             object.onRemoveFromWorld(this);
 
-        this.emit('objectDestroyed', object);
-        this.world.removeObject(objectId);
+        const groups = this.world.removeObject(objectId);
+        this.emit('objectDestroyed', { object, groups });
+        
     }
 
     /**
