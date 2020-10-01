@@ -356,6 +356,10 @@ class ServerEngine {
             that.onReceivedInput(data, socket);
         });
 
+        socket.on('_ping', function() {
+            socket.emit('_pong')
+        })
+
         // we got a packet of trace data, write it out to a side-file
         socket.on('trace', function(traceData) {
             traceData = JSON.parse(traceData);

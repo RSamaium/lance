@@ -51,6 +51,7 @@ class ClientEngine {
             stepPeriod: 1000 / GAME_UPS,
             scheduler: 'render-schedule',
             serverURL: null,
+            showLatency: false
         }, inputOptions);
 
         this.io = io || ioClient
@@ -160,6 +161,20 @@ class ClientEngine {
                 this.socket.on('roomUpdate', (roomData) => {
                     this.gameEngine.emit('client__roomUpdate', roomData);
                 });
+
+                let startTime
+
+                if (this.options.showLatency) {
+                    setInterval(() => {
+                        startTime = Date.now()
+                        this.socket.emit('_ping')
+                    }, 2000)
+                }
+            
+                this.socket.on('_pong', () => {
+                    const latency = Date.now() - startTime
+                    if (this.onLatency) this.onLatency(latency)
+                })
 
                 if (standaloneMode) {
                     resolve()

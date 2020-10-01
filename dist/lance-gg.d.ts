@@ -817,7 +817,7 @@ export class ServerEngine<PE extends PhysicsEngine = PhysicsEngine> {
 }
 
 declare type SimplePhysicsEngineOptions = PhysicsEngineOptions & {
-    collisions: {
+    collisions?: {
         type: "HSHG";
     } | {
         type: "bruteForce";
