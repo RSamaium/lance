@@ -175,6 +175,7 @@ class ServerEngine {
             let diffUpdate = true;
 
             for (const player of roomPlayers) {
+                if (player._roomName != roomName) continue
                 if (player.state === 'new') {
                     player.state = 'synced';
                     diffUpdate = false;
@@ -191,6 +192,7 @@ class ServerEngine {
             })
             
             for (const player of roomPlayers) {
+                if (player._roomName != roomName) continue
                 this.serializeUpdate(roomName, player, { diffUpdate });
             }
 
@@ -198,7 +200,7 @@ class ServerEngine {
 
             if (payload) {
                 for (const player of roomPlayers) { 
-                    if (player.socket) player.socket.emit('worldUpdate', payload); 
+                    if (player.socket && player._roomName == roomName) player.socket.emit('worldUpdate', payload); 
                 }
             }
             this.networkTransmitter.clearPayload(roomName); 
@@ -256,7 +258,7 @@ class ServerEngine {
      * @param {String} roomName - the target room
      */
     assignObjectToRoom(obj, roomName) {
-        //obj._roomName = roomName;
+        obj._roomName = roomName;
         this.gameEngine.world.addObjectInGroup(obj, roomName)
     }
 
@@ -412,6 +414,7 @@ class ServerEngine {
 
     // an input has been received from a client, queue it for next step
     onReceivedInput(data, socket) {
+        
         if (this.connectedPlayers[socket.id]) {
             this.connectedPlayers[socket.id].socket.lastHandledInput = data.messageIndex;
         }

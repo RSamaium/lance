@@ -8,6 +8,7 @@
   "scripts": {
     "docs": "jsdoc -c jsdoc.conf.json",
     "build": "rollup --config rollup.config.js",
+    "watch": "rollup --config rollup.config.js --watch",
     "test-all": "mocha test/EndToEnd/",
     "test-serializer": "mocha ./test/serializer/",
     "test": "mocha ./test/serializer/ --compilers js:@babel/register"

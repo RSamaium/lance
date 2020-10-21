@@ -200,8 +200,10 @@ class KeyboardControls {
             for (let keyName of Object.keys(this.boundKeys)) {
                 if (this.keyState[keyName] && this.keyState[keyName].isDown) {
 
+                    const { repeat, method } = this.boundKeys[keyName].options
+
                     // handle repeat press
-                    if (this.boundKeys[keyName].options.repeat || this.keyState[keyName].count == 0) {
+                    if (repeat || this.keyState[keyName].count == 0) {
 
                         // callback to get live parameters if function
                         let parameters = this.boundKeys[keyName].parameters;
@@ -213,7 +215,14 @@ class KeyboardControls {
                         let inputOptions = Object.assign({
                             movement: true
                         }, parameters || {});
-                        this.clientEngine.sendInput(this.boundKeys[keyName].actionName, inputOptions);
+
+                        if (method) {
+                            method(this.boundKeys[keyName])
+                        }
+                        else {
+                            this.clientEngine.sendInput(this.boundKeys[keyName].actionName, inputOptions);
+                        }
+            
                         this.keyState[keyName].count++;
                     }
                 }
@@ -266,10 +275,6 @@ class KeyboardControls {
             ret = this.eventEmitter.emit('keypress', keyName)
         }
         
-        if (ret.includes(false)) {
-            return
-        }
-
         if (this.stop) return
         
         if (keyName && this.boundKeys[keyName]) {

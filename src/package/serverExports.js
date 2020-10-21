@@ -1,6 +1,7 @@
 import GameEngine from '../GameEngine.js';
 import GameWorld from '../GameWorld.js';
 import SimplePhysicsEngine from '../physics/SimplePhysicsEngine.js';
+import CannonPhysicsEngine from '../physics/CannonPhysicsEngine.js';
 import BaseTypes from '../serialize/BaseTypes.js';
 import TwoVector from '../serialize/TwoVector.js';
 import ThreeVector from '../serialize/ThreeVector.js';
@@ -27,5 +28,6 @@ export {
   PhysicalObject3D,
   ServerEngine,
   Lib,
-  Utils
+  Utils,
+  CannonPhysicsEngine
 };

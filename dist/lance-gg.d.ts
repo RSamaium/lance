@@ -54,6 +54,8 @@ declare type ClientEngineInputOptions = {
 
 export class ClientEngine<GE extends GameEngine<PhysicsEngine>> {
     constructor(gameEngine: GE, io: any, inputOptions: ClientEngineInputOptions, rendererClass: { new(...args: any[]): Renderer<GE, ClientEngine<GE>>; });
+    
+    eventEmitter: any
 
     applyDelayedInputs(): void;
 
@@ -155,6 +157,8 @@ declare type GameEngineOptions = {
  */
 export class GameEngine<PE extends PhysicsEngine> {
     options: GameEngineOptions;
+
+    clientEngine: ClientEngine<any>
 
     /**
      * client's player ID, as a string. If running on the client, this is set at runtime by the clientEngine
@@ -383,6 +387,8 @@ export class GameWorld {
 
     forEachObject(callback: any): void;
 
+    forEach(callback: any): void
+
     getNewId(): any;
 
     queryObject(query: any): any;
@@ -390,6 +396,10 @@ export class GameWorld {
     queryObjects(query: any): any;
 
     removeObject(id: any): void;
+
+    has(id: any): any
+
+    size: number
 }
 
 /**
@@ -405,6 +415,8 @@ declare type InputData = {
 
 export class KeyboardControls {
     constructor(clientEngine: any, eventEmitter?: any);
+
+    stop: boolean
 
     bindKey(keys: string, actionName: string, options?: object): void;
 

@@ -168,6 +168,7 @@ class PhysicalObject3D extends GameObject {
 
     // update position, quaternion, and velocity from new game state.
     refreshToPhysics() {
+        if (!this.physicsObj) return
         this.physicsObj.position.copy(this.position);
         this.physicsObj.quaternion.copy(this.quaternion);
         this.physicsObj.velocity.copy(this.velocity);
