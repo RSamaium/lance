@@ -10,7 +10,7 @@ import BaseTypes from './BaseTypes';
  */
 class GameObject extends Serializable {
 
-    static get netScheme() {
+    get netScheme() {
         return {
             id: { type: BaseTypes.TYPES.STRING },
             playerId: { type: BaseTypes.TYPES.STRING }
@@ -60,7 +60,7 @@ class GameObject extends Serializable {
         */
        
 
-        this.components = {};
+        this.components = {}
     }
 
     /**

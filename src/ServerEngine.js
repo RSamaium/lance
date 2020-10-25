@@ -125,7 +125,7 @@ class ServerEngine {
                     this.gameEngine.emit('processInput', { input, playerId });
                     this.gameEngine.processInput(input, playerId, true);
                 });
-                delete inputQueue[minStep];
+                delete inputQueue[minStep]; 
             }
         }
 
@@ -200,7 +200,15 @@ class ServerEngine {
 
             if (payload) {
                 for (const player of roomPlayers) { 
-                    if (player.socket && player._roomName == roomName) player.socket.emit('worldUpdate', payload); 
+                    if (player.socket && player._roomName == roomName) {
+                        if (player.state === 'newInRoom') {
+                            player.socket.emit('worldUpdate', payload.all)
+                            player.state = 'synced'
+                        }
+                        else {
+                            player.socket.emit('worldUpdate', payload.update)
+                        }
+                    }
                 }
             }
             this.networkTransmitter.clearPayload(roomName); 
@@ -220,7 +228,7 @@ class ServerEngine {
         let prevObject = this.objMemory[objId];
 
         // if the object (in serialized form) hasn't changed, move on
-        if (diffUpdate) {
+        /*if (diffUpdate) {
             let s = obj.serialize(this.serializer);
             if (prevObject && Utils.arrayBuffersEqual(s.dataBuffer, prevObject))
                 return;
@@ -229,7 +237,7 @@ class ServerEngine {
 
             // prune strings which haven't changed
             obj = obj.prunedStringsClone(this.serializer, prevObject);
-        }
+        }*/
 
         this.networkTransmitter.addNetworkedEvent(roomName, 'objectUpdate', {
             stepCount: world.stepCount,
@@ -259,6 +267,7 @@ class ServerEngine {
      */
     assignObjectToRoom(obj, roomName) {
         obj._roomName = roomName;
+        obj.state = 'newInRoom'
         this.gameEngine.world.addObjectInGroup(obj, roomName)
     }
 
@@ -382,7 +391,6 @@ class ServerEngine {
     // handle player dis-connection
     onPlayerDisconnected(socketId, playerId) {
         delete this.connectedPlayers[socketId];
-        console.log('Client disconnected');
     }
 
     // resets the idle timeout for a given player

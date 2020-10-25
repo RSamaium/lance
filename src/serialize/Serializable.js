@@ -15,7 +15,17 @@ class Serializable {
      * @param {String} options.dry [optional] - Does not actually write to the buffer (useful to gather serializeable size)
      * @return {Object} the serialized object.  Contains attributes: dataBuffer - buffer which contains the serialized data;  bufferOffset - offset where the serialized data starts.
      */
-    serialize(serializer, options) {
+    
+     constructor() {
+        this.paramsChanged = new Set()
+        this.prevValues = {}
+     }
+
+     get scheme() {
+        return Object.assign({}, this.netScheme || {}, this.constructor.netScheme || {})
+     }
+    
+     _serialize(serializer, options) {
         options = Object.assign({
             bufferOffset: 0
         }, options);
@@ -34,15 +44,7 @@ class Serializable {
             classId = Utils.hashStr(this.constructor.name);
         }
 
-        // instance netScheme
-        if (this.netScheme) {
-            netScheme = this.netScheme;
-        } else if (this.constructor.netScheme) {
-            netScheme = this.constructor.netScheme;
-        } else {
-            // todo define behaviour when a netScheme is undefined
-            console.warn('no netScheme defined! This will result in awful performance');
-        }
+        netScheme = Object.assign({}, this.netScheme || {}, this.constructor.netScheme || {})
 
         // TODO: currently we serialize every node twice, once to calculate the size
         //       of the buffers and once to write them out.  This can be reduced to
@@ -112,6 +114,88 @@ class Serializable {
         return { dataBuffer, bufferOffset: localBufferOffset };
     }
 
+    setPrev(key, val) {
+        this.prevValues[key] = val 
+    }
+
+    getPrev(key) {
+        return this.prevValues[key]
+    }
+
+    serialize() {
+        let dataBuffer = {}
+
+        const setCommonProp = (groups, val) => {
+            
+        }
+    
+        const deepSerialize = (val) => {
+            if (val == undefined) return
+            if (val instanceof Array) {
+                const groupsArray = {}
+                for (let i=0 ; i < val.length ; i++) {
+                    const item = val[i]
+                    const newVal = deepSerialize(item)
+                    for (let key in newVal.groups) {
+                        if (!groupsArray[key]) groupsArray[key] = []
+                        groupsArray[key].push(newVal.groups[key])
+                    }
+                    val[i] = newVal.origin
+                }
+                return { groups: groupsArray, origin: val }
+            }
+            if (val.netScheme || val.constructor.netScheme) {
+                let scheme = val.scheme
+                const detectChanges = val.detectChanges 
+                const groups = {
+                    update: {},
+                    all: {}
+                }
+                for (let key in scheme) {
+                    const value = val[key]
+                    const originVal = val.getPrev(key)
+                    if (value == undefined || typeof value == 'number' ||  typeof value == 'string') {
+                        if (detectChanges && originVal != val[key]) {
+                            groups['update'][key] = value
+                        }
+                        else if (!detectChanges) groups['update'][key] = value
+                        groups['all'][key] = value
+                        val.setPrev(key, value)
+                    }
+                    else {
+                        const newVal = deepSerialize(val[key])
+                        for (let keyGroup in newVal.groups) {
+                            groups[keyGroup][key] = newVal.groups[keyGroup]
+                        }
+                        val[key] = newVal.origin
+                    }
+                }
+                let classId
+                if (val.classId) {
+                    classId = val.classId
+                } else {
+                    classId = Utils.hashStr(val.constructor.name)
+                }
+                for (let key in groups) {
+                    groups[key].id = val.id
+                    groups[key].classId = classId
+                }
+                return { groups, origin: val }
+            }
+            if (typeof val == 'object') {
+                const newObj = Object.assign({}, val)
+                for (let key in newObj) {
+                    const newVal = deepSerialize(val[key])
+                    newObj[key] = newVal.groups
+                    val[key] = newVal.origin
+                }
+                return { groups: newObj, origin: val }
+            }
+        }
+        dataBuffer = deepSerialize(this)
+        return dataBuffer.groups
+    }
+
     // build a clone of this object with pruned strings (if necessary)
     prunedStringsClone(serializer, prevObject) {
 
@@ -134,22 +218,7 @@ class Serializable {
     }
 
     syncTo(other) {
-        let netScheme = this.constructor.netScheme;
-        for (let p of Object.keys(netScheme)) {
-
-            // ignore classes and lists
-            if (netScheme[p].type === BaseTypes.TYPES.LIST || netScheme[p].type === BaseTypes.TYPES.CLASSINSTANCE)
-                continue;
-
-            // strings might be pruned
-            if (netScheme[p].type === BaseTypes.TYPES.STRING) {
-                if (typeof other[p] === 'string') this[p] = other[p];
-                continue;
-            }
-
-            // all other values are copied
-            this[p] = other[p];
-        }
+        return other
     }
 
 }

@@ -11,7 +11,7 @@ export default class NetworkedEventCollection extends Serializable {
             events: {
                 type: BaseTypes.TYPES.LIST,
                 itemType: BaseTypes.TYPES.CLASSINSTANCE
-            },
+            }
         };
     }
 
