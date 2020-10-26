@@ -15,33 +15,6 @@ class ThreeVector extends Serializable {
         };
     }
 
-    get x() {
-        return this._x
-    }
-
-    set x(val) {
-         this.paramsChanged.add('x')
-         this._x = val
-    }
-
-    get y() {
-        return this._y
-    }
-
-    set y(val) {
-         this.paramsChanged.add('y')
-         this._y = val
-    }
-
-    get z() {
-        return this._z
-    }
-
-    set z(val) {
-         this.paramsChanged.add('z')
-         this._z = val
-    }
-
     /**
     * Creates an instance of a ThreeVector.
     * @param {Number} x - first value
@@ -54,7 +27,7 @@ class ThreeVector extends Serializable {
         this.x = x;
         this.y = y;
         this.z = z;
-        this.detectChanges = true
+
         return this;
     }
 

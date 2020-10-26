@@ -24,28 +24,10 @@ class TwoVector extends Serializable {
         super();
         this.x = x;
         this.y = y;
-        this.detectChanges = true
+
         return this;
     }
 
-    get x() {
-        return this._x
-    }
-
-    set x(val) {
-         this.paramsChanged.add('x')
-         this._x = val
-    }
-
-    get y() {
-        return this._y
-    }
-
-    set y(val) {
-         this.paramsChanged.add('y')
-         this._y = val
-    }
-    
     /**
      * Formatted textual description of the TwoVector.
      * @return {String} description

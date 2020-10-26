@@ -89,11 +89,12 @@ export default class NetworkTransmitter {
             return null;
 
         let dataBuffer = this.networkedEventCollection[roomName].serialize(this.serializer);
+
         return dataBuffer;
     }
 
-    deserializePayload(payload, game) {
-        return this.serializer.deserialize(payload, game).obj;
+    deserializePayload(payload) {
+        return this.serializer.deserialize(payload.dataBuffer).obj;
     }
 
     clearPayload(roomName) {

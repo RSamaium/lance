@@ -82,9 +82,22 @@ export default class SyncStrategy {
 
     // add an object to our world
     addNewObject(objId, newObj, options) {
-        newObj.gameEngine = this.gameEngine
-        this.gameEngine.addObjectToWorld(newObj)
-        return newObj;
+
+        let curObj = new newObj.constructor(this.gameEngine, {
+            id: objId
+        });
+
+        // enforce object implementations of syncTo
+        if (!curObj.__proto__.hasOwnProperty('syncTo')) {
+            throw `GameObject of type ${curObj.class} does not implement the syncTo() method, which must copy the netscheme`;
+        }
+
+        curObj.syncTo(newObj);
+        this.gameEngine.addObjectToWorld(curObj);
+        if (this.clientEngine.options.verbose)
+            console.log(`adding new object ${curObj}`);
+
+        return curObj;
     }
 
     // sync to step, by applying bending, and applying the latest sync

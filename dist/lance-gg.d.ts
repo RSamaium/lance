@@ -120,7 +120,7 @@ export class DynamicObject<GE extends GameEngine<PE>, PE extends PhysicsEngine> 
 
     turnRight(deltaAngle: any): any;
 
-    netScheme: {
+    static netScheme: {
         angle: { type: string; };
         height: { type: string; };
         id: { type: string; };
@@ -335,8 +335,6 @@ declare type GameObjectNetScheme = {
 
 export class GameObject<GE extends GameEngine<PE>, PE extends PhysicsEngine> extends Serializable {
     gameEngine: GE;
-
-    paramsChanged: any
 
     id: number;
     playerId: number;
@@ -763,7 +761,6 @@ export class ServerEngine<PE extends PhysicsEngine = PhysicsEngine> {
     connectedPlayers: {};
     playerInputQueues: {};
     objMemory: {};
-    serverTime: number;
 
     constructor(io: SocketIO, gameEngine: GameEngine<PE>, options?: ServerEngineOptions);
 

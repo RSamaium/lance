@@ -11,7 +11,7 @@ export default class NetworkedEventFactory {
 
         this.eventName = eventName;
         this.netScheme = options.netScheme;
-        this.netScheme.eventName = eventName
+
     }
 
     /**
@@ -29,7 +29,6 @@ export default class NetworkedEventFactory {
 
             // copy properties from the networkedEvent instance to its ad-hoc netsScheme
             for (let property of Object.keys(this.netScheme)) {
-                if (property == 'eventName') continue
                 networkedEvent[property] = payload[property];
             }
 

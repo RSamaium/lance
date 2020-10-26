@@ -57,48 +57,31 @@ class Serializer {
         this.registeredClasses[classId] = classObj;
     }
 
-    deserialize(dataBuffer, game) {
-        const deepDeserialize = (val, objectInstance) => {
-            if (val instanceof Array) {
-                const newArray = []
-                for (let item of val) {
-                    newArray.push(deepDeserialize(item, Object.assign({}, objectInstance)))
-                }
-                return newArray
-            }
-            if (typeof val == 'object') {
-                let obj = {}
-                if (val.classId) {
-                    if (val.id) { 
-                        obj = game.world.objects[val.id]
-                        if (!obj) {
-                            let objectClass = this.registeredClasses[val.classId];
-                            obj = new objectClass(null, { id: val.id })
-                            obj.gameEngine = game
-                            game.addObjectToWorld(obj)
-                        }
-                    }
-                    else {
-                        if (objectInstance) {
-                            obj = objectInstance
-                        }
-                        else {
-                            let objectClass = this.registeredClasses[val.classId];
-                            obj = new objectClass(null, { id: null })
-                        }
-                    }         
-                }
-                for (let property in val) {
-                    obj[property] = deepDeserialize(val[property], obj[property])
-                }
-                return obj
-            }
-            return val
+    deserialize(dataBuffer, byteOffset) {
+        byteOffset = byteOffset ? byteOffset : 0;
+        let localByteOffset = 0;
+
+        let dataView = new DataView(dataBuffer);
+
+        let objectClassId = dataView.getUint8(byteOffset + localByteOffset);
+
+        // todo if classId is 0 - take care of dynamic serialization.
+        let objectClass = this.registeredClasses[objectClassId];
+        if (objectClass == null) {
+            console.error('Serializer: Found a class which was not registered.  Please use serializer.registerClass() to register all serialized classes.');
         }
 
-        const obj = deepDeserialize(dataBuffer)
+        localByteOffset += Uint8Array.BYTES_PER_ELEMENT; // advance the byteOffset after the classId
 
-        return {obj}
+        // create de-referenced instance of the class. gameEngine and id will be 'tacked on' later at the sync strategies
+        let obj = new objectClass(null, { id: null });
+        for (let property of Object.keys(objectClass.netScheme).sort()) {
+            let read = this.readDataView(dataView, byteOffset + localByteOffset, objectClass.netScheme[property]);
+            obj[property] = read.data;
+            localByteOffset += read.bufferSize;
+        }
+
+        return { obj, byteOffset: localByteOffset };
     }
 
     writeDataView(dataView, value, bufferOffset, netSchemProp) {

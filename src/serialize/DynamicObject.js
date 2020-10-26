@@ -38,8 +38,8 @@ class DynamicObject extends GameObject {
     *         }, super.netScheme);
     *     }
     */
-    get netScheme() {
-        const obj = Object.assign({
+    static get netScheme() {
+        return Object.assign({
             position: { type: BaseTypes.TYPES.CLASSINSTANCE },
             width: { type: BaseTypes.TYPES.INT16 },
             height: { type: BaseTypes.TYPES.INT16 },
@@ -47,7 +47,6 @@ class DynamicObject extends GameObject {
             velocity: { type: BaseTypes.TYPES.CLASSINSTANCE },
             angle: { type: BaseTypes.TYPES.FLOAT32 }
         }, super.netScheme);
-        return obj
     }
 
     /**
