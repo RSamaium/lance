@@ -106,6 +106,8 @@ class ClientEngine {
             syncOptions.reflect = true;
         }
 
+        syncOptions.serializer = this.serializer
+
         this.synchronizer = new Synchronizer(this, syncOptions);
     }
 
@@ -317,7 +319,8 @@ class ClientEngine {
 
         this.gameEngine.emit('client__preStep');
         while (this.inboundMessages.length > 0) {
-            this.handleInboundMessage(this.inboundMessages.pop());
+            const last = this.inboundMessages.pop()
+            this.handleInboundMessage(last);
             this.checkDrift('onServerSync');
         }
 

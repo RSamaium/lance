@@ -94,7 +94,8 @@ export default class ExtrapolateStrategy extends SyncStrategy {
                 // case 2: this object already exists locally
                 this.gameEngine.trace.trace(() => `object before syncTo: ${curObj.toString()}`);
                 curObj.saveState();
-                curObj.syncTo(ev.objectInstance);
+                this.syncTo(curObj, ev.objectInstance)
+              //  curObj.syncTo(ev.objectInstance);
                 this.gameEngine.trace.trace(() => `object after syncTo: ${curObj.toString()} synced to step[${ev.stepCount}]`);
 
             } else {

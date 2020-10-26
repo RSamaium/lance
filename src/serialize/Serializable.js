@@ -124,11 +124,6 @@ class Serializable {
 
     serialize() {
         let dataBuffer = {}
-
-        const setCommonProp = (groups, val) => {
-            
-        }
-    
         const deepSerialize = (val) => {
             if (val == undefined) return
             if (val instanceof Array) {
@@ -177,6 +172,10 @@ class Serializable {
                     classId = Utils.hashStr(val.constructor.name)
                 }
                 for (let key in groups) {
+                    if (Object.keys(groups[key]).length == 0) {
+                        groups[key] = undefined
+                        continue
+                    }
                     groups[key].id = val.id
                     groups[key].classId = classId
                 }

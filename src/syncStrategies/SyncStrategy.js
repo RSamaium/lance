@@ -5,6 +5,7 @@ export default class SyncStrategy {
         this.gameEngine = clientEngine.gameEngine;
         this.needFirstSync = true;
         this.options = Object.assign({}, inputOptions);
+        this.serializer = this.options.serializer;
         this.gameEngine.on('client__postStep', this.syncStep.bind(this));
         this.gameEngine.on('client__syncReceived', this.collectSync.bind(this));
         this.requiredSyncs = [];
@@ -82,9 +83,12 @@ export default class SyncStrategy {
 
     // add an object to our world
     addNewObject(objId, newObj, options) {
-        newObj.gameEngine = this.gameEngine
-        this.gameEngine.addObjectToWorld(newObj)
-        return newObj;
+        let objectClass = this.serializer.registeredClasses[newObj.classId];
+        const curObj = new objectClass(this.gameEngine, { id: objId })
+        this.syncTo(curObj, newObj)
+       // curObj.syncTo(newObj)
+        this.gameEngine.addObjectToWorld(curObj)
+        return curObj;
     }
 
     // sync to step, by applying bending, and applying the latest sync
@@ -118,4 +122,28 @@ export default class SyncStrategy {
                 this.lastSync = null;
         }
     }
+
+    syncTo(curObj, newObj) {
+        delete newObj.classId
+        const deepDeserialize = (val, objectInstance) => {
+            if (val instanceof Array) {
+                const newArray = []
+                for (let item of val) {
+                    newArray.push(deepDeserialize(item, objectInstance))
+                }
+                return newArray
+            }
+            if (typeof val == 'object') {
+                let obj = objectInstance
+                for (let property in val) {
+                    obj[property] = deepDeserialize(val[property], obj[property])
+                }
+                return obj
+            }
+            return val
+        }
+        const newVal = deepDeserialize(newObj, curObj)
+        return newVal
+    }
+   
 }

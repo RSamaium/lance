@@ -69,7 +69,7 @@ class Serializer {
             if (typeof val == 'object') {
                 let obj = {}
                 if (val.classId) {
-                    if (val.id) { 
+                    /*if (val.id) { 
                         obj = game.world.objects[val.id]
                         if (!obj) {
                             let objectClass = this.registeredClasses[val.classId];
@@ -86,7 +86,9 @@ class Serializer {
                             let objectClass = this.registeredClasses[val.classId];
                             obj = new objectClass(null, { id: null })
                         }
-                    }         
+                    }   */      
+                    let objectClass = this.registeredClasses[val.classId];
+                    obj = new objectClass(null, { id: val.id })
                 }
                 for (let property in val) {
                     obj[property] = deepDeserialize(val[property], obj[property])
@@ -98,7 +100,7 @@ class Serializer {
 
         const obj = deepDeserialize(dataBuffer)
 
-        return {obj}
+        return {obj: dataBuffer}
     }
 
     writeDataView(dataView, value, bufferOffset, netSchemProp) {

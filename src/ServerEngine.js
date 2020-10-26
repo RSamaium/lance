@@ -174,13 +174,13 @@ class ServerEngine {
             const roomPlayers = world.getObjectsOfGroup(roomName)
             let diffUpdate = true;
 
-            for (const player of roomPlayers) {
+            /*for (const player of roomPlayers) {
                 if (player._roomName != roomName) continue
                 if (player.state === 'new') {
                     player.state = 'synced';
                     diffUpdate = false;
                 }
-            }
+            }*/
 
             // also, one in N syncs is a full update, or a special request
             if ((room.syncCounter++ % this.options.fullSyncRate === 0) || room.requestFullSync)
@@ -188,7 +188,7 @@ class ServerEngine {
 
             this.networkTransmitter.addNetworkedEvent(roomName, 'syncHeader', {
                 stepCount: world.stepCount,
-                fullUpdate: Number(!diffUpdate)
+                fullUpdate: 1
             })
             
             for (const player of roomPlayers) {
