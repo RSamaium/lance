@@ -200,7 +200,10 @@ class ServerEngine {
 
             if (payload) {
                 for (const player of roomPlayers) { 
-                    if (player.socket && player._roomName == roomName) player.socket.emit('worldUpdate', payload); 
+                    if (player.socket && player._roomName == roomName) {
+                        player.socket.emit('worldUpdate', payload)
+                        player.socket.emit('objectUpdate', {hp:100})
+                    }
                 }
             }
             this.networkTransmitter.clearPayload(roomName); 
