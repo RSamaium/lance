@@ -76,7 +76,6 @@ class ServerEngine {
          */
         this.DEFAULT_ROOM_NAME = '/lobby';
         this.rooms = {};
-        this.createRoom(this.DEFAULT_ROOM_NAME);
         this.connectedPlayers = {};
         this.playerInputQueues = {};
         this.objMemory = {};
@@ -190,10 +189,20 @@ class ServerEngine {
                 stepCount: world.stepCount,
                 fullUpdate: Number(!diffUpdate)
             })
+
+            let dataObjects = {
+                all: {},
+                update: {}
+            }
             
             for (const player of roomPlayers) {
                 if (player._roomName != roomName) continue
                 this.serializeUpdate(roomName, player, { diffUpdate });
+                const dataPlayer = this.serializeObject(player, room.broadcast)
+                dataObjects.all[player.id] = dataPlayer.all
+                if (Object.keys(dataPlayer.update).length != 0) {
+                    dataObjects.update[player.id] = dataPlayer.update
+                } 
             }
 
             const payload = this.networkTransmitter.serializePayload(roomName);
@@ -202,7 +211,13 @@ class ServerEngine {
                 for (const player of roomPlayers) { 
                     if (player.socket && player._roomName == roomName) {
                         player.socket.emit('worldUpdate', payload)
-                        player.socket.emit('objectUpdate', {hp:100})
+                        if (player.$state == 'newInRoom') {
+                            player.socket.emit('objectUpdate', dataObjects.all)
+                            player.$state = 'synced'
+                        }
+                        else if (Object.keys(dataObjects.update).length != 0) {
+                            player.socket.emit('objectUpdate', dataObjects.update) 
+                        }
                     }
                 }
             }
@@ -210,6 +225,49 @@ class ServerEngine {
             room.requestImmediateSync = false;
             room.requestFullSync = false;
         }
+    }
+
+    serializeObject(player, schemeRules) {
+        const deepSerialize = (val, schemeParams, schemeQuery) => {
+            if (val == undefined) return
+            const groups = {
+                update: {},
+                all: {}
+            }
+            for (let prop of schemeParams) {
+                const value = val[prop]
+                const originVal = val.getPrev(prop)
+                if (value == undefined || typeof value == 'number' ||  typeof value == 'string') {
+                    if (originVal != val[prop]) {
+                        groups['update'][prop] = value
+                    }
+                    groups['all'][prop] = value
+                    val.setPrev(prop, value)
+                }
+                else if (prop.broadcast) {
+                    const newVal = deepSerialize(val[prop], prop.broadcast, schemeQuery)
+                    for (let keyGroup in newVal.groups) {
+                        groups[keyGroup][prop] = newVal.groups[keyGroup]
+                    }
+                    val[prop] = newVal.origin
+                }
+            }
+            return { groups, origin: val }
+        }
+        let update = {}
+        let all = {}
+        for (let rule of schemeRules) {
+            const { groups } = deepSerialize(player, rule.params, rule.query)
+            update = {
+                ...update,
+                ...groups.update
+            }
+            all = {
+                ...all,
+                ...groups.all
+            }
+        }
+        return { update, all }
     }
 
     // create a serialized package of the game world
@@ -250,8 +308,8 @@ class ServerEngine {
      *
      * @param {String} roomName - the new room name
      */
-    createRoom(roomName) {
-        this.rooms[roomName] = { syncCounter: 0, requestImmediateSync: false };
+    createRoom(roomName, options) {
+        this.gameEngine.world.addGroup(roomName, options)
     }
 
     /**
@@ -262,6 +320,7 @@ class ServerEngine {
      */
     assignObjectToRoom(obj, roomName) {
         obj._roomName = roomName;
+        obj.$state = 'newInRoom'
         this.gameEngine.world.addObjectInGroup(obj, roomName)
     }
 

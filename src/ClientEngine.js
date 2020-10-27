@@ -62,6 +62,8 @@ class ClientEngine {
          */
         this.serializer = new Serializer();
 
+        this.bufferParamsChanged = new Map()
+
         /**
          * reference to game engine
          * @member {GameEngine}
@@ -158,6 +160,22 @@ class ClientEngine {
                     this.inboundMessages.push(worldData);
                 });
 
+                this.socket.on('objectUpdate', (objects) => {
+                    for (let id in objects) {
+                        let data = objects[id]
+                        data.id = id
+                        const findObject = this.updateObjectData(data)
+                        if (!findObject) {
+                            let events = this.bufferParamsChanged.get(data.id)
+                            if (!events) {
+                                events = []
+                            }
+                            events.push(data)
+                            this.bufferParamsChanged.set(data.id, events)
+                        }
+                    }
+                });
+
                 this.socket.on('roomUpdate', (roomData) => {
                     this.gameEngine.emit('client__roomUpdate', roomData);
                 });
@@ -187,6 +205,24 @@ class ClientEngine {
             matchmaker = Utils.httpGetPromise(this.options.matchmaker);
 
         return matchmaker.then(connectSocket);
+    }
+
+
+    updateObjectData(data) {
+        const logic = this.gameEngine.world.getObject(data)
+        if (logic) {
+            if (!logic) return null
+            if (!logic.data) logic.data = {}
+            for (let key in data) {
+                if (key == 'id') continue
+                logic.data[key] = data[key]
+            }
+            this.gameEngine.emit('client__objectUpdate', {
+                object: logic,
+                data
+            });
+        }
+        return !!logic
     }
 
     /**
@@ -316,6 +352,15 @@ class ClientEngine {
         }
 
         this.gameEngine.emit('client__preStep');
+        
+        this.bufferParamsChanged.forEach((dataArray, playerId) => {
+            let bool = false
+            for (let data of dataArray) {
+                bool = this.updateObjectData(data)
+            }
+            if (bool) this.bufferParamsChanged.set(playerId, [])
+        })
+
         while (this.inboundMessages.length > 0) {
             this.handleInboundMessage(this.inboundMessages.pop());
             this.checkDrift('onServerSync');

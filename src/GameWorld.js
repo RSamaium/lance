@@ -159,14 +159,24 @@ class GameWorld {
         }
     }
 
-    addGroup(groupName) {
-        this.groups.set(groupName, {
-            collections: [],
-            requestImmediateSync: false,
-            requestFullSync: false,
-            syncCounter: 0,
-            groupName
-        })
+    addGroup(groupName, options = {}) {
+        if (this.groups.has(groupName)) {
+            const meta = this.groups.get(groupName)
+            this.groups.set(groupName, {
+                ...meta,
+                ...options
+            })
+        }
+        else {
+            this.groups.set(groupName, {
+                collections: [],
+                requestImmediateSync: false,
+                requestFullSync: false,
+                syncCounter: 0,
+                groupName,
+                ...options
+            })
+        }
         if (this.onAddGroup) this.onAddGroup(groupName)
     }
 
