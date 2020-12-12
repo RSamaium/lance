@@ -136,7 +136,12 @@ class ClientEngine {
                     this.socket = this.io(matchMakerAnswer.serverURL, options);
                 }
                 else {
-                    this.socket = this.io.connection()
+                    if (this.gameEngine.standalone) {
+                        this.socket = this.io
+                    }
+                    else {
+                        this.socket = this.io.connection()
+                    }
                 }
  
                 this.networkMonitor.registerClient(this);
@@ -196,6 +201,10 @@ class ClientEngine {
 
                 if (standaloneMode) {
                     resolve()
+                }
+
+                if (this.gameEngine.standalone) {
+                    this.io.connection()
                 }
             });
         };
