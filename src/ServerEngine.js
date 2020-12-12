@@ -4,8 +4,7 @@ import Utils from './lib/Utils';
 import Scheduler from './lib/Scheduler';
 import Serializer from './serialize/Serializer';
 import NetworkTransmitter from './network/NetworkTransmitter';
-import NetworkMonitor from './network/NetworkMonitor';
-import { v4 as uuidv4 } from 'uuid';
+import NetworkMonitor from './network/NetworkMonitor'
 
 /**
  * ServerEngine is the main server-side singleton code.
@@ -41,7 +40,8 @@ class ServerEngine {
      * @param {Number} options.timeoutInterval=180 - number of seconds after which a player is automatically disconnected if no input is received. Set to 0 for no timeout
      * @return {ServerEngine} serverEngine - self
      */
-    constructor(io, gameEngine, options) {
+    constructor(io, gameEngine, world, options) {
+        this.World = world
         this.options = Object.assign({
             updateRate: 6,
             stepRate: 60,
@@ -109,6 +109,8 @@ class ServerEngine {
         this.gameEngine.emit('server__preStep', this.gameEngine.world.stepCount + 1);
 
         this.serverTime = (new Date().getTime());
+
+        this.World.send()
 
         // for each player, replay all the inputs in the oldest step
         for (let playerId of Object.keys(this.playerInputQueues)) {
@@ -198,26 +200,14 @@ class ServerEngine {
             for (const player of roomPlayers) {
                 if (player._roomName != roomName) continue
                 this.serializeUpdate(roomName, player, { diffUpdate });
-                const dataPlayer = this.serializeObject(player, room.broadcast)
-                dataObjects.all[player.id] = dataPlayer.all
-                if (Object.keys(dataPlayer.update).length != 0) {
-                    dataObjects.update[player.id] = dataPlayer.update
-                } 
             }
 
             const payload = this.networkTransmitter.serializePayload(roomName);
 
             if (payload) {
                 for (const player of roomPlayers) { 
-                    if (player.socket && player._roomName == roomName) {
-                        player.socket.emit('worldUpdate', payload)
-                        if (player.$state == 'newInRoom') {
-                            player.socket.emit('objectUpdate', dataObjects.all)
-                            player.$state = 'synced'
-                        }
-                        else if (Object.keys(dataObjects.update).length != 0) {
-                            player.socket.emit('objectUpdate', dataObjects.update) 
-                        }
+                    if (player._socket && player._roomName == roomName) {
+                        player._socket.emit('worldUpdate', payload)
                     }
                 }
             }
@@ -387,18 +377,18 @@ class ServerEngine {
         let that = this;
 
         // save player
-        this.connectedPlayers[socket.id] = {
+        /*this.connectedPlayers[socket.id] = {
             socket: socket,
             state: 'new',
             roomName: this.DEFAULT_ROOM_NAME
-        };
+        };*/
+        
 
         let playerId = this.getPlayerId(socket);
         if (!playerId) {
-            playerId = uuidv4();
+            playerId = Utils.generateUID()
         }
         socket.playerId = playerId;
-
         socket.lastHandledInput = null;
         socket.joinTime = (new Date()).getTime();
         this.resetIdleTimeout(socket);
@@ -433,6 +423,8 @@ class ServerEngine {
         });
 
         this.networkMonitor.registerPlayerOnServer(socket);
+
+        return playerId
     }
 
     // handle player timeout
@@ -443,8 +435,9 @@ class ServerEngine {
 
     // handle player dis-connection
     onPlayerDisconnected(socketId, playerId) {
-        delete this.connectedPlayers[socketId];
-        console.log('Client disconnected');
+        //delete this.connectedPlayers[socketId];
+        this.World.disconnectUser(playerId)
+        //console.log('Client disconnected');
     }
 
     // resets the idle timeout for a given player

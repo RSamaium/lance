@@ -1,6 +1,7 @@
 import SocketIO from 'socket.io';
 import CANNON from 'cannon';
 import p2 from "p2";
+import { Schema } from '@colyseus/schema/lib/Schema';
 
 // Type definitions for lance-gg 4.0
 // Project: https://github.com/lance-gg/lance#readme
@@ -312,6 +313,12 @@ export class Serializable {
     classId: string;
 
     static netScheme: NetSchemeProps;
+
+    encode()
+
+    encodeAll()
+
+    decode(buffer: any)
 
     serialize(serializer: object, options: object): { dataBuffer: object; bufferOffset: number };
 
@@ -762,7 +769,7 @@ export class ServerEngine<PE extends PhysicsEngine = PhysicsEngine> {
     playerInputQueues: {};
     objMemory: {};
 
-    constructor(io: SocketIO, gameEngine: GameEngine<PE>, options?: ServerEngineOptions);
+    constructor(io: SocketIO, gameEngine: GameEngine<PE>, world: any, options?: ServerEngineOptions);
 
     /**
      * Assign an object to a room
@@ -807,7 +814,7 @@ export class ServerEngine<PE extends PhysicsEngine = PhysicsEngine> {
 
     onObjectDestroyed(obj: GameObject<GameEngine<PE>, PE>): void;
 
-    onPlayerConnected(socket: SocketIO.Socket): void;
+    onPlayerConnected(socket: SocketIO.Socket): any;
 
     onPlayerDisconnected(socketId: string, playerId: string): void;
 
@@ -957,4 +964,5 @@ export namespace Lib {
 
 export class Utils {
     static hashStr(s: string)
+    static generateUID()
 }
