@@ -199,6 +199,7 @@ class ServerEngine {
             
             for (const player of roomPlayers) {
                 if (player._roomName != roomName) continue
+                if (player.tick) player.tick()
                 this.serializeUpdate(roomName, player, { diffUpdate });
             }
 

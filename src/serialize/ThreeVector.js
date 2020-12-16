@@ -176,6 +176,14 @@ class ThreeVector extends Serializable {
 
         return increment;
     }
+
+    toJSON() {
+        return {
+            x: this.x,
+            y: this.y,
+            z: this.z
+        }
+    }
 }
 
 export default ThreeVector;

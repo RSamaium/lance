@@ -16,10 +16,6 @@ class Serializable {
      * @return {Object} the serialized object.  Contains attributes: dataBuffer - buffer which contains the serialized data;  bufferOffset - offset where the serialized data starts.
      */
 
-    constructor() {
-        this.prevValues = {}
-    }
-
     serialize(serializer, options) {
         options = Object.assign({
             bufferOffset: 0
@@ -115,14 +111,6 @@ class Serializable {
         }
 
         return { dataBuffer, bufferOffset: localBufferOffset };
-    }
-
-    setPrev(key, val) {
-        this.prevValues[key] = val 
-    }
-
-    getPrev(key) {
-        return this.prevValues[key]
     }
 
     // build a clone of this object with pruned strings (if necessary)
