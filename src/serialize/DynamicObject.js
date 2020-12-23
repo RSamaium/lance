@@ -69,7 +69,6 @@ class DynamicObject extends GameObject {
 
         this.bendingIncrements = 0;
 
-        this.position = new TwoVector(0, 0);
         this.velocity = new TwoVector(0, 0);
 
         /**

@@ -1,7 +1,5 @@
-import SocketIO from 'socket.io';
 import CANNON from 'cannon';
 import p2 from "p2";
-import { Schema } from '@colyseus/schema/lib/Schema';
 
 // Type definitions for lance-gg 4.0
 // Project: https://github.com/lance-gg/lance#readme
@@ -86,7 +84,6 @@ export class DynamicObject<GE extends GameEngine<PE>, PE extends PhysicsEngine> 
 
     bendingIncrements: number;
 
-    position: TwoVector;
     velocity: TwoVector;
 
     width: number;
@@ -160,6 +157,8 @@ export class GameEngine<PE extends PhysicsEngine> {
     options: GameEngineOptions;
 
     clientEngine: ClientEngine<any>
+
+    events: any
 
     /**
      * client's player ID, as a string. If running on the client, this is set at runtime by the clientEngine
@@ -407,6 +406,8 @@ export class GameWorld {
     has(id: any): any
 
     size: number
+
+    objects: any
 }
 
 /**
@@ -769,7 +770,7 @@ export class ServerEngine<PE extends PhysicsEngine = PhysicsEngine> {
     playerInputQueues: {};
     objMemory: {};
 
-    constructor(io: SocketIO, gameEngine: GameEngine<PE>, world: any, options?: ServerEngineOptions);
+    constructor(io: any, gameEngine: GameEngine<PE>, world: any, options?: ServerEngineOptions);
 
     /**
      * Assign an object to a room
@@ -808,23 +809,23 @@ export class ServerEngine<PE extends PhysicsEngine = PhysicsEngine> {
      */
     gameStatus(): string;
 
-    getPlayerId(socket: SocketIO.Socket): void;
+    getPlayerId(socket: any): void;
 
     onObjectAdded(obj: GameObject<GameEngine<PE>, PE>): void;
 
     onObjectDestroyed(obj: GameObject<GameEngine<PE>, PE>): void;
 
-    onPlayerConnected(socket: SocketIO.Socket): any;
+    onPlayerConnected(socket: any): any;
 
     onPlayerDisconnected(socketId: string, playerId: string): void;
 
-    onPlayerTimeout(socket: SocketIO.Socket): void;
+    onPlayerTimeout(socket: any): void;
 
-    onReceivedInput(data: InputData, socket: SocketIO.Socket): void;
+    onReceivedInput(data: InputData, socket: any): void;
 
     queueInputForPlayer(data: InputData, playerId: string): void;
 
-    resetIdleTimeout(socket: SocketIO.Socket): void;
+    resetIdleTimeout(socket: any): void;
 
     serializeUpdate(roomName: string, options: { diffUpdate: boolean }): SerializedObject;
 
