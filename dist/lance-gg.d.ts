@@ -82,7 +82,7 @@ export class ClientEngine<GE extends GameEngine<PhysicsEngine>> {
 export class DynamicObject<GE extends GameEngine<PE>, PE extends PhysicsEngine> extends GameObject<GE, PE> {
     constructor(gameEngine: any, options: any, props: any);
 
-    bendingIncrements: number;
+    bendingIncrements: number
 
     velocity: TwoVector;
 

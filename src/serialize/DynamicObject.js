@@ -266,7 +266,6 @@ class DynamicObject extends GameObject {
             Object.assign(velocityBending, this.bending.velocityLocal);
             Object.assign(angleBending, this.bending.angleLocal);
         }
-
         // get the incremental delta position & velocity
         this.incrementScale = percent / increments;
         this.bendingPositionDelta = original.position.getBendingDelta(this.position, positionBending);

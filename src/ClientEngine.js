@@ -62,8 +62,6 @@ class ClientEngine {
          */
         this.serializer = new Serializer();
 
-        this.bufferParamsChanged = new Map()
-
         /**
          * reference to game engine
          * @member {GameEngine}
@@ -121,99 +119,45 @@ class ClientEngine {
      */
     connect(options = {}) {
 
-        let connectSocket = matchMakerAnswer => {
-            return new Promise((resolve, reject) => {
+        if (this.gameEngine.standalone) {
+            this.socket = this.io
+        }
+        else {
+            this.socket = this.io(options)
+        }
 
-                const standaloneMode = typeof this.io != 'function'
+        this.networkMonitor.registerClient(this);
 
-                if (matchMakerAnswer.status !== 'ok')
-                    reject('matchMaker failed status: ' + matchMakerAnswer.status);
+        this.socket.on('playerJoined', (playerData) => {
+            this.gameEngine.playerId = playerData.playerId;
+            this.messageIndex = this.gameEngine.playerId;
+        });
 
-                if (this.options.verbose)
-                    console.log(`connecting to game server ${matchMakerAnswer.serverURL}`);
+        this.socket.on('worldUpdate', (worldData) => {
+            this.inboundMessages.push(worldData);
+        });
 
-                if (!standaloneMode) {
-                    this.socket = this.io(matchMakerAnswer.serverURL, options);
-                }
-                else {
-                    if (this.gameEngine.standalone) {
-                        this.socket = this.io
-                    }
-                    else {
-                        this.socket = this.io.connection()
-                    }
-                }
- 
-                this.networkMonitor.registerClient(this);
+        this.socket.on('roomUpdate', (roomData) => {
+            this.gameEngine.emit('client__roomUpdate', roomData);
+        });
 
-                this.socket.once('connect', () => {
-                    if (this.options.verbose)
-                        console.log('connection made');
-                    resolve();
-                });
+        let startTime
 
-                this.socket.once('error', (error) => {
-                    reject(error);
-                });
+        if (this.options.showLatency) {
+            setInterval(() => {
+                startTime = Date.now()
+                this.socket.emit('_ping')
+            }, 2000)
+        }
+    
+        this.socket.on('_pong', () => {
+            const latency = Date.now() - startTime
+            if (this.onLatency) this.onLatency(latency)
+        })
 
-                this.socket.on('playerJoined', (playerData) => {
-                    this.gameEngine.playerId = playerData.playerId;
-                    this.messageIndex = this.gameEngine.playerId;
-                });
-
-                this.socket.on('worldUpdate', (worldData) => {
-                    this.inboundMessages.push(worldData);
-                });
-
-                this.socket.on('objectUpdate', (objects) => {
-                    for (let id in objects) {
-                        let data = objects[id]
-                        data.id = id
-                        const findObject = this.updateObjectData(data)
-                        if (!findObject) {
-                            let events = this.bufferParamsChanged.get(data.id)
-                            if (!events) {
-                                events = []
-                            }
-                            events.push(data)
-                            this.bufferParamsChanged.set(data.id, events)
-                        }
-                    }
-                });
-
-                this.socket.on('roomUpdate', (roomData) => {
-                    this.gameEngine.emit('client__roomUpdate', roomData);
-                });
-
-                let startTime
-
-                if (this.options.showLatency) {
-                    setInterval(() => {
-                        startTime = Date.now()
-                        this.socket.emit('_ping')
-                    }, 2000)
-                }
-            
-                this.socket.on('_pong', () => {
-                    const latency = Date.now() - startTime
-                    if (this.onLatency) this.onLatency(latency)
-                })
-
-                if (standaloneMode) {
-                    resolve()
-                }
-
-                if (this.gameEngine.standalone) {
-                    this.io.connection()
-                }
-            });
-        };
-
-        let matchmaker = Promise.resolve({ serverURL: this.options.serverURL, status: 'ok' });
-        if (this.options.matchmaker)
-            matchmaker = Utils.httpGetPromise(this.options.matchmaker);
-
-        return matchmaker.then(connectSocket);
+        if (this.gameEngine.standalone) {
+            this.io.connection()
+        }
     }
 
 
@@ -361,14 +305,6 @@ class ClientEngine {
         }
 
         this.gameEngine.emit('client__preStep');
-        
-        this.bufferParamsChanged.forEach((dataArray, playerId) => {
-            let bool = false
-            for (let data of dataArray) {
-                bool = this.updateObjectData(data)
-            }
-            if (bool) this.bufferParamsChanged.set(playerId, [])
-        })
 
         while (this.inboundMessages.length > 0) {
             this.handleInboundMessage(this.inboundMessages.pop());
