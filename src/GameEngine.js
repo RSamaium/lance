@@ -274,11 +274,11 @@ class GameEngine {
         }
         this.trace.info(() => `========== destroying object ${object.toString()} ==========`);
 
-        if (typeof object.onRemoveFromWorld === 'function')
+        /*if (typeof object.onRemoveFromWorld === 'function')
             object.onRemoveFromWorld(this);
 
         const groups = this.world.removeObject(objectId);
-        this.emit('objectDestroyed', { object, groups });
+        this.emit('objectDestroyed', { object, groups });*/
         
     }
 

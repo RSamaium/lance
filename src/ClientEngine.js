@@ -231,7 +231,7 @@ class ClientEngine {
                         if (!this.resolved && !this.stopped) {
                             if (this.options.verbose)
                                 console.log('disconnected by server...');
-                            this.stopped = true;
+                            //this.stopped = true;
                             reject();
                         }
                     });
