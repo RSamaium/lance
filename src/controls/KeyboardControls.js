@@ -269,10 +269,11 @@ class KeyboardControls {
         e = e || window.event;
 
         let keyName = keyCodeTable[e.keyCode];
+        const isStopped = this.stop
 
         if (isDown) this.clientEngine.keyChange.next(keyName)
         
-        if (this.stop) return
+        if (isStopped) return
         
         if (keyName && this.boundKeys[keyName]) {
             if (this.keyState[keyName] == null) {
