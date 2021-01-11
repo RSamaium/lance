@@ -1,4 +1,4 @@
-import ioClient from 'socket.io-client';
+import ioClient from 'socket.io-client'
 import Utils from './lib/Utils';
 import Scheduler from './lib/Scheduler';
 import Synchronizer from './Synchronizer';

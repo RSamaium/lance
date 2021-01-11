@@ -4995,15 +4995,11 @@
   	createDebug.enable = enable;
   	createDebug.enabled = enabled;
   	createDebug.humanize = ms;
+  	createDebug.destroy = destroy;
 
   	Object.keys(env).forEach(key => {
   		createDebug[key] = env[key];
   	});
-
-  	/**
-  	* Active `debug` instances.
-  	*/
-  	createDebug.instances = [];
 
   	/**
   	* The currently active debug mode names, and names to skip.
@@ -5046,6 +5042,7 @@
   	*/
   	function createDebug(namespace) {
   		let prevTime;
+  		let enableOverride = null;
 
   		function debug(...args) {
   			// Disabled?
@@ -5075,7 +5072,7 @@
   			args[0] = args[0].replace(/%([a-zA-Z%])/g, (match, format) => {
   				// If we encounter an escaped % then don't increase the array index
   				if (match === '%%') {
-  					return match;
+  					return '%';
   				}
   				index++;
   				const formatter = createDebug.formatters[format];
@@ -5098,31 +5095,26 @@
   		}
 
   		debug.namespace = namespace;
-  		debug.enabled = createDebug.enabled(namespace);
   		debug.useColors = createDebug.useColors();
-  		debug.color = selectColor(namespace);
-  		debug.destroy = destroy;
+  		debug.color = createDebug.selectColor(namespace);
   		debug.extend = extend;
-  		// Debug.formatArgs = formatArgs;
-  		// debug.rawLog = rawLog;
+  		debug.destroy = createDebug.destroy; // XXX Temporary. Will be removed in the next major release.
 
-  		// env-specific initialization logic for debug instances
+  		Object.defineProperty(debug, 'enabled', {
+  			enumerable: true,
+  			configurable: false,
+  			get: () => enableOverride === null ? createDebug.enabled(namespace) : enableOverride,
+  			set: v => {
+  				enableOverride = v;
+  			}
+  		});
+
+  		// Env-specific initialization logic for debug instances
   		if (typeof createDebug.init === 'function') {
   			createDebug.init(debug);
   		}
 
-  		createDebug.instances.push(debug);
-
   		return debug;
-  	}
-
-  	function destroy() {
-  		const index = createDebug.instances.indexOf(this);
-  		if (index !== -1) {
-  			createDebug.instances.splice(index, 1);
-  			return true;
-  		}
-  		return false;
   	}
 
   	function extend(namespace, delimiter) {
@@ -5161,11 +5153,6 @@
   			} else {
   				createDebug.names.push(new RegExp('^' + namespaces + '$'));
   			}
-  		}
-
-  		for (i = 0; i < createDebug.instances.length; i++) {
-  			const instance = createDebug.instances[i];
-  			instance.enabled = createDebug.enabled(instance.namespace);
   		}
   	}
 
@@ -5241,6 +5228,14 @@
   		return val;
   	}
 
+  	/**
+  	* XXX DO NOT USE. This is a temporary stub function.
+  	* XXX It WILL be removed in the next major release.
+  	*/
+  	function destroy() {
+  		console.warn('Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.');
+  	}
+
   	createDebug.enable(createDebug.load());
 
   	return createDebug;
@@ -5255,12 +5250,21 @@
    * This is the web browser implementation of `debug()`.
    */
 
-  exports.log = log;
   exports.formatArgs = formatArgs;
   exports.save = save;
   exports.load = load;
   exports.useColors = useColors;
   exports.storage = localstorage();
+  exports.destroy = (() => {
+  	let warned = false;
+
+  	return () => {
+  		if (!warned) {
+  			warned = true;
+  			console.warn('Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.');
+  		}
+  	};
+  })();
 
   /**
    * Colors.
@@ -5421,18 +5425,14 @@
   }
 
   /**
-   * Invokes `console.log()` when available.
-   * No-op when `console.log` is not a "function".
+   * Invokes `console.debug()` when available.
+   * No-op when `console.debug` is not a "function".
+   * If `console.debug` is not available, falls back
+   * to `console.log`.
    *
    * @api public
    */
-  function log(...args) {
-  	// This hackery is required for IE8/9, where
-  	// the `console.log` function doesn't have 'apply'
-  	return typeof console === 'object' &&
-  		console.log &&
-  		console.log(...args);
-  }
+  exports.log = console.debug || console.log || (() => {});
 
   /**
    * Save `namespaces`.
@@ -5514,13 +5514,14 @@
   	}
   };
   });
-  var browser_1 = browser.log;
-  var browser_2 = browser.formatArgs;
-  var browser_3 = browser.save;
-  var browser_4 = browser.load;
-  var browser_5 = browser.useColors;
-  var browser_6 = browser.storage;
+  var browser_1 = browser.formatArgs;
+  var browser_2 = browser.save;
+  var browser_3 = browser.load;
+  var browser_4 = browser.useColors;
+  var browser_5 = browser.storage;
+  var browser_6 = browser.destroy;
   var browser_7 = browser.colors;
+  var browser_8 = browser.log;
 
   var url_1 = createCommonjsModule(function (module, exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
@@ -8496,10 +8497,8 @@
   exports.on = void 0;
   function on(obj, ev, fn) {
       obj.on(ev, fn);
-      return {
-          destroy: function () {
-              obj.off(ev, fn);
-          },
+      return function subDestroy() {
+          obj.off(ev, fn);
       };
   }
   exports.on = on;
@@ -8508,34 +8507,9 @@
   unwrapExports(on_1);
   var on_2 = on_1.on;
 
-  /**
-   * Slice reference.
-   */
-
-  var slice = [].slice;
-
-  /**
-   * Bind `obj` to `fn`.
-   *
-   * @param {Object} obj
-   * @param {Function|String} fn or string
-   * @return {Function}
-   * @api public
-   */
-
-  var componentBind = function(obj, fn){
-    if ('string' == typeof fn) fn = obj[fn];
-    if ('function' != typeof fn) throw new Error('bind() requires a function');
-    var args = slice.call(arguments, 2);
-    return function(){
-      return fn.apply(obj, args.concat(slice.call(arguments)));
-    }
-  };
-
   var socket$1 = createCommonjsModule(function (module, exports) {
   Object.defineProperty(exports, "__esModule", { value: true });
   exports.Socket = void 0;
-
 
 
 
@@ -8561,10 +8535,10 @@
        */
       constructor(io, nsp, opts) {
           super();
-          this.ids = 0;
-          this.acks = {};
           this.receiveBuffer = [];
           this.sendBuffer = [];
+          this.ids = 0;
+          this.acks = {};
           this.flags = {};
           this.io = io;
           this.nsp = nsp;
@@ -8591,9 +8565,10 @@
               return;
           const io = this.io;
           this.subs = [
-              on_1.on(io, "open", componentBind(this, "onopen")),
-              on_1.on(io, "packet", componentBind(this, "onpacket")),
-              on_1.on(io, "close", componentBind(this, "onclose")),
+              on_1.on(io, "open", this.onopen.bind(this)),
+              on_1.on(io, "packet", this.onpacket.bind(this)),
+              on_1.on(io, "error", this.onerror.bind(this)),
+              on_1.on(io, "close", this.onclose.bind(this)),
           ];
       }
       /**
@@ -8699,6 +8674,17 @@
           }
           else {
               this.packet({ type: dist.PacketType.CONNECT, data: this.auth });
+          }
+      }
+      /**
+       * Called upon engine or manager `error`.
+       *
+       * @param err
+       * @private
+       */
+      onerror(err) {
+          if (!this.connected) {
+              super.emit("connect_error", err);
           }
       }
       /**
@@ -8868,10 +8854,8 @@
       destroy() {
           if (this.subs) {
               // clean subscriptions to avoid reconnections
-              for (let i = 0; i < this.subs.length; i++) {
-                  this.subs[i].destroy();
-              }
-              this.subs = null;
+              this.subs.forEach((subDestroy) => subDestroy());
+              this.subs = undefined;
           }
           this.io["_destroy"](this);
       }
@@ -9082,7 +9066,6 @@
 
 
 
-
   const debug = browser("socket.io-client:manager");
   class Manager extends componentEmitter {
       constructor(uri, opts) {
@@ -9191,7 +9174,7 @@
           this._readyState = "opening";
           this.skipReconnect = false;
           // emit `open`
-          const openSub = on_1.on(socket, "open", function () {
+          const openSubDestroy = on_1.on(socket, "open", function () {
               self.onopen();
               fn && fn();
           });
@@ -9213,29 +9196,27 @@
               const timeout = this._timeout;
               debug("connect attempt will timeout after %d", timeout);
               if (timeout === 0) {
-                  openSub.destroy(); // prevents a race condition with the 'open' event
+                  openSubDestroy(); // prevents a race condition with the 'open' event
               }
               // set timer
               const timer = setTimeout(() => {
                   debug("connect attempt timed out after %d", timeout);
-                  openSub.destroy();
+                  openSubDestroy();
                   socket.close();
                   socket.emit("error", new Error("timeout"));
               }, timeout);
-              this.subs.push({
-                  destroy: function () {
-                      clearTimeout(timer);
-                  },
+              this.subs.push(function subDestroy() {
+                  clearTimeout(timer);
               });
           }
-          this.subs.push(openSub);
+          this.subs.push(openSubDestroy);
           this.subs.push(errorSub);
           return this;
       }
       /**
        * Alias for open()
        *
-       * @return {Manager} self
+       * @return self
        * @public
        */
       connect(fn) {
@@ -9255,7 +9236,7 @@
           super.emit("open");
           // add new subs
           const socket = this.engine;
-          this.subs.push(on_1.on(socket, "data", componentBind(this, "ondata")), on_1.on(socket, "ping", componentBind(this, "onping")), on_1.on(socket, "error", componentBind(this, "onerror")), on_1.on(socket, "close", componentBind(this, "onclose")), on_1.on(this.decoder, "decoded", componentBind(this, "ondecoded")));
+          this.subs.push(on_1.on(socket, "ping", this.onping.bind(this)), on_1.on(socket, "data", this.ondata.bind(this)), on_1.on(socket, "error", this.onerror.bind(this)), on_1.on(socket, "close", this.onclose.bind(this)), on_1.on(this.decoder, "decoded", this.ondecoded.bind(this)));
       }
       /**
        * Called upon a ping.
@@ -9343,11 +9324,8 @@
        */
       cleanup() {
           debug("cleanup");
-          const subsLength = this.subs.length;
-          for (let i = 0; i < subsLength; i++) {
-              const sub = this.subs.shift();
-              sub.destroy();
-          }
+          this.subs.forEach((subDestroy) => subDestroy());
+          this.subs.length = 0;
           this.decoder.destroy();
       }
       /**
@@ -9432,10 +9410,8 @@
                       }
                   });
               }, delay);
-              this.subs.push({
-                  destroy: function () {
-                      clearTimeout(timer);
-                  },
+              this.subs.push(function subDestroy() {
+                  clearTimeout(timer);
               });
           }
       }
@@ -11579,6 +11555,19 @@
     244: 'kanji',
     255: 'toggle touchpad'
   };
+
+  var inverse = function inverse(obj) {
+    var newObj = {};
+
+    for (var key in obj) {
+      var val = obj[key];
+      newObj[val] = key;
+    }
+
+    return newObj;
+  };
+
+  var inverseKeyCodeTable = inverse(keyCodeTable);
   /**
    * This class allows easy usage of device keyboard controls.  Use the method {@link KeyboardControls#bindKey} to
    * generate events whenever a key is pressed.
@@ -11691,6 +11680,32 @@
             parameters: parameters
           };
         });
+      }
+    }, {
+      key: "applyKeyDown",
+      value: function applyKeyDown(name) {
+        var code = inverseKeyCodeTable[name];
+        var e = new Event('keydown');
+        e.keyCode = code;
+        this.onKeyChange(e, true);
+      }
+    }, {
+      key: "applyKeyUp",
+      value: function applyKeyUp(name) {
+        var code = inverseKeyCodeTable[name];
+        var e = new Event('keyup');
+        e.keyCode = code;
+        this.onKeyChange(e, false);
+      }
+    }, {
+      key: "applyKeyPress",
+      value: function applyKeyPress(name) {
+        var _this4 = this;
+
+        this.applyKeyDown(name);
+        setTimeout(function () {
+          _this4.applyKeyUp(name);
+        }, 200);
       } // todo implement unbindKey
 
     }, {

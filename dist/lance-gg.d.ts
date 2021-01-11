@@ -56,6 +56,8 @@ export class ClientEngine<GE extends GameEngine<PhysicsEngine>> {
     
     eventEmitter: any
 
+    controls: KeyboardControls
+
     applyDelayedInputs(): void;
 
     checkDrift(checkType: string): void;
@@ -429,6 +431,10 @@ export class KeyboardControls {
     bindKey(keys: string, actionName: string, options?: object): void;
 
     onKeyChange(e: any, isDown: any): void;
+
+    applyKeyDown(name: string): void
+    applyKeyUp(name: string): void
+    applyKeyPress(name: string): void
 
     setupListeners(): void;
 }

@@ -166,6 +166,17 @@ const keyCodeTable = {
     255: 'toggle touchpad'
 };
 
+const inverse = (obj) => {
+    const newObj = {}
+    for (let key in obj) {
+        const val = obj[key]
+        newObj[val] = key
+    }
+    return newObj
+}
+
+const inverseKeyCodeTable = inverse(keyCodeTable)
+
 /**
  * This class allows easy usage of device keyboard controls.  Use the method {@link KeyboardControls#bindKey} to
  * generate events whenever a key is pressed.
@@ -261,6 +272,27 @@ class KeyboardControls {
         keys.forEach(keyName => {
             this.boundKeys[keyName] = { actionName, options: keyOptions, parameters: parameters };
         });
+    }
+
+    applyKeyDown(name) {
+        const code = inverseKeyCodeTable[name]
+        const e = new Event('keydown')
+        e.keyCode = code
+        this.onKeyChange(e, true)
+    }
+
+    applyKeyUp(name) {
+        const code = inverseKeyCodeTable[name]
+        const e = new Event('keyup')
+        e.keyCode = code
+        this.onKeyChange(e, false)
+    }
+
+    applyKeyPress(name) {
+        this.applyKeyDown(name)
+        setTimeout(() => {
+            this.applyKeyUp(name)
+        }, 200)
     }
 
     // todo implement unbindKey
